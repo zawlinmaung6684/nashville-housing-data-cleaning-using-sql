@@ -17,33 +17,33 @@ WHERE TaxDistrict = "";
 -- Remove Leading and Trailing Double Quotes in Each Column
 UPDATE nashville
 SET ParcelID = TRIM(BOTH '"' FROM ParcelID),
-	PropertyAddress = TRIM(BOTH '"' FROM PropertyAddress),
-	OwnerName = TRIM(BOTH '"' FROM OwnerName),
+    PropertyAddress = TRIM(BOTH '"' FROM PropertyAddress),
+    OwnerName = TRIM(BOTH '"' FROM OwnerName),
     OwnerAddress = TRIM(BOTH '"' FROM OwnerAddress),
     LegalReference = TRIM(BOTH '"' FROM LegalReference);
 
 -- Populate Property Address Data
 SELECT 
-	a.ParcelID, 
+    a.ParcelID, 
     a.PropertyAddress, 
     b.ParcelID, 
     b.PropertyAddress,
     IFNULL(a.PropertyAddress, b.PropertyAddress) AS AddressToAdd
 FROM nashville a 
-	JOIN nashville b
+    JOIN nashville b
     ON a.ParcelID = b.ParcelID AND a.UniqueID <> b.UniqueID
 WHERE a.PropertyAddress IS NULL;
 
 UPDATE nashville a
-	INNER JOIN nashville b
+    INNER JOIN nashville b
     ON a.ParcelID = b.ParcelID AND a.UniqueID <> b.UniqueID
 SET a.PropertyAddress = IFNULL(a.PropertyAddress, b.PropertyAddress)
 WHERE a.PropertyAddress IS NULL;
 
 -- Breaking Out Address into Individual Columns (Address, City, State)
 SELECT
-	PropertyAddress,
-	REPLACE(SUBSTRING(PropertyAddress, 1, LOCATE(',', PropertyAddress)), ',', '') AS Address,
+    PropertyAddress,
+    REPLACE(SUBSTRING(PropertyAddress, 1, LOCATE(',', PropertyAddress)), ',', '') AS Address,
     REPLACE(SUBSTRING(PropertyAddress, LOCATE(',', PropertyAddress)), ',', '') AS City
 FROM nashville;
 
@@ -66,9 +66,9 @@ FROM nashville;
 -- Split OwnerAddress to Three Separated Addresses
 SELECT 
 	OwnerAddress,
-    SUBSTRING_INDEX(OwnerAddress, ',', 1) AS OwnerSplitAddress,
-    SUBSTRING_INDEX(SUBSTRING_INDEX(OwnerAddress, ',', 2), ',', -1) AS OwnerSplitCity,
-    SUBSTRING_INDEX(OwnerAddress, ',', -1) AS OwnerSplitState
+	SUBSTRING_INDEX(OwnerAddress, ',', 1) AS OwnerSplitAddress,
+	SUBSTRING_INDEX(SUBSTRING_INDEX(OwnerAddress, ',', 2), ',', -1) AS OwnerSplitCity,
+	SUBSTRING_INDEX(OwnerAddress, ',', -1) AS OwnerSplitState
 FROM nashville;
 
 -- Create Three New Columns and Insert Splitted Addresses
@@ -110,39 +110,39 @@ ORDER BY 2;
 
 -- Change Y and N to Yes and No
 SELECT 
-	SoldAsVacant,
+    SoldAsVacant,
     CASE
-		WHEN SoldAsVacant = 'Y' THEN 'Yes'
+	WHEN SoldAsVacant = 'Y' THEN 'Yes'
         WHEN SoldAsVacant = 'N' THEN 'No'
         ELSE SoldAsVacant
-	END
+    END
 FROM nashville;
 
 UPDATE nashville
 SET SoldAsVacant = 
 	CASE
-		WHEN SoldAsVacant = 'Y' THEN 'Yes'
-        WHEN SoldAsVacant = 'N' THEN 'No'
-        ELSE SoldAsVacant
+	    WHEN SoldAsVacant = 'Y' THEN 'Yes'
+            WHEN SoldAsVacant = 'N' THEN 'No'
+            ELSE SoldAsVacant
 	END;
 
 -- Remove Duplicates
 DELETE 
 FROM nashville
 WHERE UniqueID IN (
-	SELECT UniqueID
+    SELECT UniqueID
     FROM (
-		SELECT 
-			UniqueID,
-			ROW_NUMBER() OVER (PARTITION BY ParcelID, 
-										PropertyAddress, 
+	SELECT 
+	    UniqueID,
+	    ROW_NUMBER() OVER (PARTITION BY ParcelID, 
+					PropertyAddress, 
                                         SalePrice,
                                         SaleDate,
                                         LegalReference
-							 ORDER BY UniqueID) AS row_num
-		FROM nashville
-	) AS t1
-	WHERE row_num > 1
+				ORDER BY UniqueID) AS row_num
+	FROM nashville
+    ) AS t1
+    WHERE row_num > 1
 );
 
 -- Delete Unused Columns
